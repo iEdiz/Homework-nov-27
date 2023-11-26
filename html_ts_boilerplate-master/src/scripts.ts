@@ -1,4 +1,5 @@
 import axios from 'axios';
+import { event } from 'jquery';
 import { v4 as uuidv4 } from 'uuid';
 
 const countryWrapper: HTMLDivElement = document.querySelector('.js-country-wrapper');
@@ -25,14 +26,102 @@ type Country = {
 
 let countriesArr: Country[] = [];
 
-const getData = async (): Promise<void> => {
+const onPageChange = (page: number) => {
+  getData(page);
+};
+
+const parseLinkHeader = (linkHeader: string | undefined) => {
+  const result: Record<string, string> = {};
+
+  if (linkHeader) {
+    const links = linkHeader.split(', ');
+
+    links.forEach((link) => {
+      const [url, rel] = link.split('; ');
+      const [, value] = /<(.+)>/.exec(url) || [];
+      result[rel] = value;
+    });
+  }
+
+  return result;
+};
+
+let nextButtonClickHandler: EventListener | null = null;
+let prevButtonClickHandler: EventListener | null = null;
+
+const getData = async (page = 1, limit = 20): Promise<void> => {
   try {
-    const response = await axios.get<Country[]>('http://localhost:3004/countries');
+    const response = await axios.get<Country[]>('http://localhost:3004/countries', {
+      params: {
+        _page: page,
+        _limit: limit,
+      },
+    });
+
+    // Access the Link header to get pagination information
+    const linkHeader = response.headers.link;
+    const paginationInfo = parseLinkHeader(linkHeader);
+
+    const nextButton = document.querySelector<HTMLButtonElement>('.js-next-button');
+    const prevButton = document.querySelector<HTMLButtonElement>('.js-prev-button');
+    const links = document.querySelectorAll('.link');
+
+    if (nextButton && prevButton) {
+      prevButton.disabled = page === 1;
+      nextButton.disabled = page === 12;
+    }
+
+    const highlightedPage = (pageNumber: number) => {
+      links.forEach((link, index) => {
+        link.classList.toggle('active-page', index + 1 === pageNumber);
+      });
+    };
+
+    if (nextButton) {
+      // Remove the previous event listener if it exists
+      if (nextButtonClickHandler) {
+        nextButton.removeEventListener('click', nextButtonClickHandler);
+      }
+
+      // Define the click event listener
+      nextButtonClickHandler = () => {
+        const nextPage = paginationInfo.next
+          ? Number(new URL(paginationInfo.next).searchParams.get('_page'))
+          : page + 1;
+
+        highlightedPage(nextPage);
+        onPageChange(nextPage);
+      };
+
+      // Add the new event listener
+      nextButton.addEventListener('click', nextButtonClickHandler);
+    }
+
+    if (prevButton) {
+      if (prevButtonClickHandler) {
+        prevButton.removeEventListener('click', prevButtonClickHandler);
+      }
+
+      prevButtonClickHandler = () => {
+        const prevPage = paginationInfo.prev
+          ? Number(new URL(paginationInfo.prev).searchParams.get('_page'))
+          : page - 1;
+
+        highlightedPage(prevPage);
+        onPageChange(prevPage);
+      };
+
+      prevButton.addEventListener('click', prevButtonClickHandler);
+    }
+
     countriesArr = response.data.map((country) => ({ id: uuidv4(), ...country }));
 
     if (countryWrapper) {
       countryWrapper.innerHTML = buildTableHTML(countriesArr);
     }
+
+    // Use paginationInfo to handle pagination links
+    // For example, you can use paginationInfo.next, paginationInfo.prev, etc.
   } catch (error) {
     console.error('Error fetching countries:', error);
   }
@@ -98,6 +187,26 @@ const mainHeader = () => {
         <input class="form-control" type="text" name="countryCurrency" placeholder="Search currency...">
         <input class="form-control" type="text" name="countryLanguage" placeholder="Search language...">
     </form>
+    <div class="button-wrapper">
+      <div class="button__pagination">
+        <button class="button__prev js-prev-button">Prev</button>
+        <ul class="button__values">
+          <li class="link active-page" value="1">1</li>
+          <li class="link" value="2">2</li>
+          <li class="link" value="3">3</li>
+          <li class="link" value="4">4</li>
+          <li class="link" value="5">5</li>
+          <li class="link" value="6">6</li>
+          <li class="link" value="7">7</li>
+          <li class="link" value="8">8</li>
+          <li class="link" value="9">9</li>
+          <li class="link" value="10">10</li>
+          <li class="link" value="11">11</li>
+          <li class="link" value="12">12</li>
+        </ul>
+        <button class="button__next js-next-button">Next</button>
+      </div>
+    </div>
     `;
 };
 

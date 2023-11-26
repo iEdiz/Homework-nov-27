@@ -11,10 +11,10 @@ body {
 
 .js-input .icon-arrow {
   display: inline-block;
-  width: 1.8rem;
-  height: 1.8rem;
+  width: 2.5rem;
+  height: 2.5rem;
   text-align: center;
-  font-size: 1.5rem;
+  font-size: 2rem;
   border: solid transparent 1.4px !important;
   margin: 15px 0;
   cursor: pointer;
@@ -26,8 +26,15 @@ body {
   border: solid #5FBDFF 1.4px !important;
 }
 
-.icon-arrow.active {
+ .icon-arrow:hover {
+  border: solid #5FBDFF 1.4px !important;
   color: #5FBDFF !important;
+  opacity: 0.6;
+}
+
+.icon-arrow.active {
+  color: white !important;
+  background-color: #5FBDFF !important;
   transform: rotate(0deg);
   transition: 0.3s linear;
 }
@@ -36,6 +43,56 @@ body {
   transform: rotate(180deg);
   transition: 0.3s linear;
 }
+
+.button-wrapper {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin: 10px 0 10px 0;
+}
+
+.button__pagination {
+  display: flex;
+  align-items: center;
+}
+
+.button__values {
+  margin: 20px 30px;
+}
+
+.button__values .link {
+  display: inline-block;
+  margin: 0 10px;
+  width: 45px;
+  height: 45px;
+  border-radius: 50%;
+  text-align: center;
+  font-size: 22px;
+  font-weight: 500;
+  line-height: 45px;
+  background-position: 0 -45px;
+  transition: 0.5s;
+}
+
+.button__prev, .button__next {
+  display: inline-flex;
+  align-items: center;
+  font-size: 22px;
+  font-weight: 500;
+  color: aquamarine;
+  background: transparent;
+  outline: none;
+  border: none;
+  cursor: pointer;
+}
+
+.button__values .active-page {
+  color: white;
+  background-image: linear-gradient(#ff4568, #ff4568) !important;
+  background-repeat: no-repeat;
+  background-position: 0 0;
+}
+
 
 .hide {
   display: none;
