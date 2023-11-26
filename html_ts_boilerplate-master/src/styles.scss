@@ -9,6 +9,34 @@ body {
   font-size: 50px;
 }
 
+.js-input .icon-arrow {
+  display: inline-block;
+  width: 1.8rem;
+  height: 1.8rem;
+  text-align: center;
+  font-size: 1.5rem;
+  border: solid transparent 1.4px !important;
+  margin: 15px 0;
+  cursor: pointer;
+  border-radius: 50% !important;
+  transition: 0.2s ease-in-out;
+}
+
+.js-input .icon-arrow.active {
+  border: solid #5FBDFF 1.4px !important;
+}
+
+.icon-arrow.active {
+  color: #5FBDFF !important;
+  transform: rotate(0deg);
+  transition: 0.3s linear;
+}
+
+.icon-arrow.down {
+  transform: rotate(180deg);
+  transition: 0.3s linear;
+}
+
 .hide {
   display: none;
 }
