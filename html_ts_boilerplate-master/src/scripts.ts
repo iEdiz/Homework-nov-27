@@ -113,6 +113,7 @@ const getData = (page = 1, limit = countryLimit): Promise<void> => axios.get<Cou
     nextButton.disabled = page === 12;
   }
 
+  // Get current page number
   const highlightedPage = (pageNumber: number) => {
     links.forEach((link, index) => {
       link.classList.toggle('active-page', index + 1 === pageNumber);
@@ -125,9 +126,11 @@ const getData = (page = 1, limit = countryLimit): Promise<void> => axios.get<Cou
 
   if (nextButton) {
     if (nextButtonClickHandler) {
+      // Remove old eventListener, so they don't stack
       nextButton.removeEventListener('click', nextButtonClickHandler);
     }
 
+    // Create new eventListeners for both buttons
     nextButtonClickHandler = () => {
       const nextPage = paginationInfo.next
         ? Number(new URL(paginationInfo.next).searchParams.get('_page'))
@@ -157,12 +160,14 @@ const getData = (page = 1, limit = countryLimit): Promise<void> => axios.get<Cou
     prevButton.addEventListener('click', prevButtonClickHandler);
   }
 
+  // Map through countries array and add unique id to them
   countriesArr = response.data.map((country) => ({ id: uuidv4(), ...country }));
 
   if (countryWrapper) {
     countryWrapper.innerHTML = buildTableHTML(countriesArr);
   }
 }).then(() => {
+  // Filter through country names for search
   const searchByCountryName = (value: string) => {
     const filteredCountries = countriesArr.filter(
       (country) => country.name.toLowerCase().includes(value.toLowerCase()),
@@ -196,6 +201,7 @@ const getData = (page = 1, limit = countryLimit): Promise<void> => axios.get<Cou
   const searchCurrency = document.querySelector<HTMLInputElement>('input[name="countryCurrency"]');
   const searchLanguage = document.querySelector<HTMLInputElement>('input[name="countryLanguage"]');
 
+  // Show country names that have the same input as form input elements
   searchCountryName.addEventListener('input', () => {
     searchByCountryName(searchCountryName.value.trim());
   });
@@ -270,7 +276,6 @@ document.addEventListener('DOMContentLoaded', () => {
   // Adding arrows for sorting
   const arrows = document.querySelectorAll('.js-icon-arrow');
 
-  //
   arrows.forEach((arrow) => {
     arrow.addEventListener('click', () => {
       arrows.forEach((otherArrow) => {
