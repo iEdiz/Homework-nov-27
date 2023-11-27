@@ -28,11 +28,6 @@ type Country = {
 let countriesArr: Country[] = [];
 const countryLimit = 20;
 
-// Get page number
-const onPageChange = (page: number) => {
-  getData(page);
-};
-
 // Function that takes HTPP link header, parses into JS object, used for pagination
 const parseLinkHeader = (linkHeader: string | undefined) => {
   const result: Record<string, string> = {};
@@ -52,131 +47,171 @@ const parseLinkHeader = (linkHeader: string | undefined) => {
   return result;
 };
 
+// Main table of countries function made with Bootstrap
+const buildTableHTML = (countries: Country[]): string => {
+  const html = `
+    <table class="table table-striped table-dark table-bordered table-hover country-table">
+      <thead class="thead-dark">
+        <tr table__heading>
+          <th scope="col" class="js-table-heading">Country name</th>
+          <th scope="col" class="js-table-heading">Country code</th>
+          <th scope="col" class="js-table-heading">Capital city</th>
+          <th scope="col" class="js-table-heading">Currency</th>
+          <th scope="col" class="js-table-heading">Language</th>
+        </tr>
+      </thead>
+      <tbody>
+        ${countries // Maps countries array to add them to a row in table
+    .map(
+      (country) => `
+              <tr class="js-country-row" id="country-${country.id}">
+                <td>${country.name}</td>
+                <td>${country.code}</td>
+                <td>${country.capital}</td>
+                <td>${country.currency.name}</td>
+                <td>${country.language.name}</td>
+              </tr>
+            `,
+    )
+    .join('')}
+      </tbody>
+    </table>`;
+
+  return html; // Return final HTML after mapping
+};
+
 // eslint-disable-next-line no-undef
 let nextButtonClickHandler: EventListener | null = null; // Button for next page
 // eslint-disable-next-line no-undef
 let prevButtonClickHandler: EventListener | null = null; // Button for previous page
 
+// Function to show filtered countries on search
+const showCountries = (filteredCountries: Country[]) => {
+  const countryTable = document.querySelector('.country-table');
+
+  if (countryTable) {
+    countryTable.innerHTML = buildTableHTML(filteredCountries);
+  }
+};
+
 // Main function to get data from data base to browser, with default page 1 and data limit 20
-const getData = (page = 1, limit = countryLimit): Promise<void> => axios
-  .get<Country[]>('http://localhost:3004/countries', {
-    params: {
-      _page: page,
-      _limit: limit,
-    },
-  })
-  .then((response) => {
-    const linkHeader = response.headers.link;
-    const paginationInfo = parseLinkHeader(linkHeader);
+const getData = (page = 1, limit = countryLimit): Promise<void> => axios.get<Country[]>('http://localhost:3004/countries', {
+  params: {
+    _page: page,
+    _limit: limit,
+  },
+}).then((response) => {
+  const linkHeader = response.headers.link;
+  const paginationInfo = parseLinkHeader(linkHeader);
 
-    const nextButton = document.querySelector<HTMLButtonElement>('.js-next-button');
-    const prevButton = document.querySelector<HTMLButtonElement>('.js-prev-button');
-    const links = document.querySelectorAll<HTMLTableCellElement>('.link');
+  const nextButton = document.querySelector<HTMLButtonElement>('.js-next-button');
+  const prevButton = document.querySelector<HTMLButtonElement>('.js-prev-button');
+  const links = document.querySelectorAll<HTMLTableCellElement>('.link');
 
-    if (nextButton && prevButton) {
-      prevButton.disabled = page === 1;
-      nextButton.disabled = page === 12;
+  if (nextButton && prevButton) {
+    prevButton.disabled = page === 1;
+    nextButton.disabled = page === 12;
+  }
+
+  const highlightedPage = (pageNumber: number) => {
+    links.forEach((link, index) => {
+      link.classList.toggle('active-page', index + 1 === pageNumber);
+    });
+  };
+  // Get page number
+  const onPageChange = (pageChanged: number) => {
+    getData(pageChanged);
+  };
+
+  if (nextButton) {
+    if (nextButtonClickHandler) {
+      nextButton.removeEventListener('click', nextButtonClickHandler);
     }
 
-    const highlightedPage = (pageNumber: number) => {
-      links.forEach((link, index) => {
-        link.classList.toggle('active-page', index + 1 === pageNumber);
-      });
+    nextButtonClickHandler = () => {
+      const nextPage = paginationInfo.next
+        ? Number(new URL(paginationInfo.next).searchParams.get('_page'))
+        : page + 1;
+
+      highlightedPage(nextPage);
+      onPageChange(nextPage);
     };
 
-    if (nextButton) {
-      if (nextButtonClickHandler) {
-        nextButton.removeEventListener('click', nextButtonClickHandler);
-      }
+    nextButton.addEventListener('click', nextButtonClickHandler);
+  }
 
-      nextButtonClickHandler = () => {
-        const nextPage = paginationInfo.next
-          ? Number(new URL(paginationInfo.next).searchParams.get('_page'))
-          : page + 1;
-
-        highlightedPage(nextPage);
-        onPageChange(nextPage);
-      };
-
-      nextButton.addEventListener('click', nextButtonClickHandler);
+  if (prevButton) {
+    if (prevButtonClickHandler) {
+      prevButton.removeEventListener('click', prevButtonClickHandler);
     }
 
-    if (prevButton) {
-      if (prevButtonClickHandler) {
-        prevButton.removeEventListener('click', prevButtonClickHandler);
-      }
+    prevButtonClickHandler = () => {
+      const prevPage = paginationInfo.prev
+        ? Number(new URL(paginationInfo.prev).searchParams.get('_page'))
+        : page - 1;
 
-      prevButtonClickHandler = () => {
-        const prevPage = paginationInfo.prev
-          ? Number(new URL(paginationInfo.prev).searchParams.get('_page'))
-          : page - 1;
-
-        highlightedPage(prevPage);
-        onPageChange(prevPage);
-      };
-
-      prevButton.addEventListener('click', prevButtonClickHandler);
-    }
-
-    countriesArr = response.data.map((country) => ({ id: uuidv4(), ...country }));
-
-    if (countryWrapper) {
-      countryWrapper.innerHTML = buildTableHTML(countriesArr);
-    }
-  })
-  .catch((error) => {
-    console.error('Error fetching countries:', error);
-  })
-  .then(() => {
-    const searchByCountryName = (value: string) => {
-      const filteredCountries = countriesArr.filter(
-        (country) => country.name.toLowerCase().includes(value.toLowerCase()),
-      );
-      showCountries(filteredCountries);
+      highlightedPage(prevPage);
+      onPageChange(prevPage);
     };
 
-    const searchByCapitalCity = (value: string) => {
-      const filteredCountries = countriesArr.filter(
-        (country) => country.capital.toLowerCase().includes(value.toLowerCase()),
-      );
-      showCountries(filteredCountries);
-    };
+    prevButton.addEventListener('click', prevButtonClickHandler);
+  }
 
-    const searchByCurrency = (value: string) => {
-      const filteredCountries = countriesArr.filter(
-        (country) => country.currency.name.toLowerCase().includes(value.toLowerCase()),
-      );
-      showCountries(filteredCountries);
-    };
+  countriesArr = response.data.map((country) => ({ id: uuidv4(), ...country }));
 
-    const searchByLanguage = (value: string) => {
-      const filteredCountries = countriesArr.filter(
-        (country) => country.language.name.toLowerCase().includes(value.toLowerCase()),
-      );
-      showCountries(filteredCountries);
-    };
+  if (countryWrapper) {
+    countryWrapper.innerHTML = buildTableHTML(countriesArr);
+  }
+}).then(() => {
+  const searchByCountryName = (value: string) => {
+    const filteredCountries = countriesArr.filter(
+      (country) => country.name.toLowerCase().includes(value.toLowerCase()),
+    );
+    showCountries(filteredCountries);
+  };
 
-    const searchCountryName = document.querySelector<HTMLInputElement>('input[name="countryName"]');
-    const searchCapitalCity = document.querySelector<HTMLInputElement>('input[name="countryCapital"]');
-    const searchCurrency = document.querySelector<HTMLInputElement>('input[name="countryCurrency"]');
-    const searchLanguage = document.querySelector<HTMLInputElement>('input[name="countryLanguage"]');
+  const searchByCapitalCity = (value: string) => {
+    const filteredCountries = countriesArr.filter(
+      (country) => country.capital.toLowerCase().includes(value.toLowerCase()),
+    );
+    showCountries(filteredCountries);
+  };
 
-    searchCountryName.addEventListener('input', () => {
-      searchByCountryName(searchCountryName.value.trim());
-    });
+  const searchByCurrency = (value: string) => {
+    const filteredCountries = countriesArr.filter(
+      (country) => country.currency.name.toLowerCase().includes(value.toLowerCase()),
+    );
+    showCountries(filteredCountries);
+  };
 
-    searchCapitalCity.addEventListener('input', () => {
-      searchByCapitalCity(searchCapitalCity.value.trim());
-    });
+  const searchByLanguage = (value: string) => {
+    const filteredCountries = countriesArr.filter(
+      (country) => country.language.name.toLowerCase().includes(value.toLowerCase()),
+    );
+    showCountries(filteredCountries);
+  };
 
-    searchCurrency.addEventListener('input', () => {
-      searchByCurrency(searchCurrency.value.trim());
-    });
+  const searchCountryName = document.querySelector<HTMLInputElement>('input[name="countryName"]');
+  const searchCapitalCity = document.querySelector<HTMLInputElement>('input[name="countryCapital"]');
+  const searchCurrency = document.querySelector<HTMLInputElement>('input[name="countryCurrency"]');
+  const searchLanguage = document.querySelector<HTMLInputElement>('input[name="countryLanguage"]');
 
-    searchLanguage.addEventListener('input', () => {
-      searchByLanguage(searchLanguage.value.trim());
-    });
+  searchCountryName.addEventListener('input', () => {
+    searchByCountryName(searchCountryName.value.trim());
   });
+
+  searchCapitalCity.addEventListener('input', () => {
+    searchByCapitalCity(searchCapitalCity.value.trim());
+  });
+
+  searchCurrency.addEventListener('input', () => {
+    searchByCurrency(searchCurrency.value.trim());
+  });
+
+  searchLanguage.addEventListener('input', () => {
+    searchByLanguage(searchLanguage.value.trim());
+  });
+});
 
 // Create HTML for main header search inputs and page numbers
 const mainHeader = () => {
@@ -211,48 +246,6 @@ const mainHeader = () => {
       </div>
     </div>
     `;
-};
-
-// Function to show filtered countries on search
-const showCountries = (filteredCountries: Country[]) => {
-  const countryTable = document.querySelector('.country-table');
-
-  if (countryTable) {
-    countryTable.innerHTML = buildTableHTML(filteredCountries);
-  }
-};
-
-// Main table of countries function made with Bootstrap
-const buildTableHTML = (countries: Country[]): string => {
-  const html = `
-    <table class="table table-striped table-dark table-bordered table-hover country-table">
-      <thead class="thead-dark">
-        <tr table__heading>
-          <th scope="col" class="js-table-heading">Country name</th>
-          <th scope="col" class="js-table-heading">Country code</th>
-          <th scope="col" class="js-table-heading">Capital city</th>
-          <th scope="col" class="js-table-heading">Currency</th>
-          <th scope="col" class="js-table-heading">Language</th>
-        </tr>
-      </thead>
-      <tbody>
-        ${countries // Maps countries array to add them to a row in table
-    .map(
-      (country) => `
-              <tr class="js-country-row" id="country-${country.id}">
-                <td>${country.name}</td>
-                <td>${country.code}</td>
-                <td>${country.capital}</td>
-                <td>${country.currency.name}</td>
-                <td>${country.language.name}</td>
-              </tr>
-            `,
-    )
-    .join('')}
-      </tbody>
-    </table>`;
-
-  return html; // Return final HTML after mapping
 };
 
 // Function that checks Country keys, compares and sorts them
