@@ -26,6 +26,7 @@ type Country = {
 
 // Countries Array that's we will be used for search and sort
 let countriesArr: Country[] = [];
+const countryLimit = 20;
 
 // Get page number
 const onPageChange = (page: number) => {
@@ -57,16 +58,14 @@ let nextButtonClickHandler: EventListener | null = null; // Button for next page
 let prevButtonClickHandler: EventListener | null = null; // Button for previous page
 
 // Main function to get data from data base to browser, with default page 1 and data limit 20
-const getData = async (page = 1, limit = 20): Promise<void> => {
-  try {
-    const response = await axios.get<Country[]>('http://localhost:3004/countries', {
-      params: {
-        _page: page,
-        _limit: limit,
-      },
-    });
-
-    // Access the Link header to get pagination information
+const getData = (page = 1, limit = countryLimit): Promise<void> => axios
+  .get<Country[]>('http://localhost:3004/countries', {
+    params: {
+      _page: page,
+      _limit: limit,
+    },
+  })
+  .then((response) => {
     const linkHeader = response.headers.link;
     const paginationInfo = parseLinkHeader(linkHeader);
 
@@ -74,13 +73,11 @@ const getData = async (page = 1, limit = 20): Promise<void> => {
     const prevButton = document.querySelector<HTMLButtonElement>('.js-prev-button');
     const links = document.querySelectorAll<HTMLTableCellElement>('.link');
 
-    // If it's first or last page disable prev or next buttons
     if (nextButton && prevButton) {
       prevButton.disabled = page === 1;
       nextButton.disabled = page === 12;
     }
 
-    // Add color to page number based on which page it is
     const highlightedPage = (pageNumber: number) => {
       links.forEach((link, index) => {
         link.classList.toggle('active-page', index + 1 === pageNumber);
@@ -88,16 +85,12 @@ const getData = async (page = 1, limit = 20): Promise<void> => {
     };
 
     if (nextButton) {
-      // Remove the previous event listener if it exists so the listeners don't stack
       if (nextButtonClickHandler) {
         nextButton.removeEventListener('click', nextButtonClickHandler);
       }
 
-      // Define the click event listener
       nextButtonClickHandler = () => {
         const nextPage = paginationInfo.next
-
-        // Check if there is a next page in paginatedInfo
           ? Number(new URL(paginationInfo.next).searchParams.get('_page'))
           : page + 1;
 
@@ -105,7 +98,6 @@ const getData = async (page = 1, limit = 20): Promise<void> => {
         onPageChange(nextPage);
       };
 
-      // Add the new event listener
       nextButton.addEventListener('click', nextButtonClickHandler);
     }
 
@@ -126,72 +118,65 @@ const getData = async (page = 1, limit = 20): Promise<void> => {
       prevButton.addEventListener('click', prevButtonClickHandler);
     }
 
-    // Mapping throguh countries array and giving unique ID to each country
     countriesArr = response.data.map((country) => ({ id: uuidv4(), ...country }));
 
-    // Assign country table to country wrapper
     if (countryWrapper) {
       countryWrapper.innerHTML = buildTableHTML(countriesArr);
     }
-  } catch (error) {
+  })
+  .catch((error) => {
     console.error('Error fetching countries:', error);
-  }
+  })
+  .then(() => {
+    const searchByCountryName = (value: string) => {
+      const filteredCountries = countriesArr.filter(
+        (country) => country.name.toLowerCase().includes(value.toLowerCase()),
+      );
+      showCountries(filteredCountries);
+    };
 
-  // Filter through country names for search input
-  const searchByCountryName = (value: string) => {
-    const filteredCountries = countriesArr.filter(
-      (country) => country.name.toLowerCase().includes(value.toLowerCase()),
-    );
-    showCountries(filteredCountries); // Asign filetered countries to show countries function
-  };
+    const searchByCapitalCity = (value: string) => {
+      const filteredCountries = countriesArr.filter(
+        (country) => country.capital.toLowerCase().includes(value.toLowerCase()),
+      );
+      showCountries(filteredCountries);
+    };
 
-  // Filter by capital city
-  const searchByCapitalCity = (value: string) => {
-    const filteredCountries = countriesArr.filter(
-      (country) => country.capital.toLowerCase().includes(value.toLowerCase()),
-    );
-    showCountries(filteredCountries);
-  };
+    const searchByCurrency = (value: string) => {
+      const filteredCountries = countriesArr.filter(
+        (country) => country.currency.name.toLowerCase().includes(value.toLowerCase()),
+      );
+      showCountries(filteredCountries);
+    };
 
-  // Filter by currency
-  const searchByCurrency = (value: string) => {
-    const filteredCountries = countriesArr.filter(
-      (country) => country.currency.name.toLowerCase().includes(value.toLowerCase()),
-    );
-    showCountries(filteredCountries);
-  };
+    const searchByLanguage = (value: string) => {
+      const filteredCountries = countriesArr.filter(
+        (country) => country.language.name.toLowerCase().includes(value.toLowerCase()),
+      );
+      showCountries(filteredCountries);
+    };
 
-  // Filter by language
-  const searchByLanguage = (value: string) => {
-    const filteredCountries = countriesArr.filter(
-      (country) => country.language.name.toLowerCase().includes(value.toLowerCase()),
-    );
-    showCountries(filteredCountries);
-  };
+    const searchCountryName = document.querySelector<HTMLInputElement>('input[name="countryName"]');
+    const searchCapitalCity = document.querySelector<HTMLInputElement>('input[name="countryCapital"]');
+    const searchCurrency = document.querySelector<HTMLInputElement>('input[name="countryCurrency"]');
+    const searchLanguage = document.querySelector<HTMLInputElement>('input[name="countryLanguage"]');
 
-  const searchCountryName = document.querySelector<HTMLInputElement>('input[name="countryName"]');
-  const searchCapitalCity = document.querySelector<HTMLInputElement>('input[name="countryCapital"]');
-  const searchCurrency = document.querySelector<HTMLInputElement>('input[name="countryCurrency"]');
-  const searchLanguage = document.querySelector<HTMLInputElement>('input[name="countryLanguage"]');
+    searchCountryName.addEventListener('input', () => {
+      searchByCountryName(searchCountryName.value.trim());
+    });
 
-  // Add filter functions to each input element
-  searchCountryName.addEventListener('input', () => {
-    // Add input eventListener so search updates real time
-    searchByCountryName(searchCountryName.value.trim());
+    searchCapitalCity.addEventListener('input', () => {
+      searchByCapitalCity(searchCapitalCity.value.trim());
+    });
+
+    searchCurrency.addEventListener('input', () => {
+      searchByCurrency(searchCurrency.value.trim());
+    });
+
+    searchLanguage.addEventListener('input', () => {
+      searchByLanguage(searchLanguage.value.trim());
+    });
   });
-
-  searchCapitalCity.addEventListener('input', () => {
-    searchByCapitalCity(searchCapitalCity.value.trim());
-  });
-
-  searchCurrency.addEventListener('input', () => {
-    searchByCurrency(searchCurrency.value.trim());
-  });
-
-  searchLanguage.addEventListener('input', () => {
-    searchByLanguage(searchLanguage.value.trim());
-  });
-};
 
 // Create HTML for main header search inputs and page numbers
 const mainHeader = () => {
