@@ -1,12 +1,26 @@
+@import url('https://fonts.googleapis.com/css2?family=Poltawski+Nowy:ital,wght@0,400;0,500;0,600;0,700;1,400;1,500;1,600;1,700&display=swap');
+
+* {
+  box-sizing: border-box;
+}
+
 body {
   background-color: antiquewhite;
   margin: 20px;
+  font-family: 'Poltawski Nowy', serif;
 }
 
 .main-header {
   text-align: center;
-  margin: 50px 0 20px 0;
+  margin: 30px 0 30px 0;
   font-size: 50px;
+  font-weight: 900;
+}
+
+.form-control {
+  border-radius: 20px !important;
+  border-radius: 20px;
+  box-shadow: 0px 1px 5px black;
 }
 
 .js-input .icon-arrow {
@@ -14,7 +28,7 @@ body {
   width: 2.5rem;
   height: 2.5rem;
   text-align: center;
-  font-size: 2rem;
+  font-size: 2.2rem;
   border: solid transparent 1.4px !important;
   margin: 15px 0;
   cursor: pointer;
@@ -23,18 +37,18 @@ body {
 }
 
 .js-input .icon-arrow.active {
-  border: solid #5FBDFF 1.4px !important;
+  border: solid #7d74ff 1.4px !important;
 }
 
  .icon-arrow:hover {
-  border: solid #5FBDFF 1.4px !important;
-  color: #5FBDFF !important;
+  border: solid #7d74ff 1.4px !important;
+  color: #7d74ff !important;
   opacity: 0.6;
 }
 
 .icon-arrow.active {
   color: white !important;
-  background-color: #5FBDFF !important;
+  background-color: #7d74ff !important;
   transform: rotate(0deg);
   transition: 0.3s linear;
 }
@@ -48,16 +62,21 @@ body {
   display: flex;
   align-items: center;
   justify-content: center;
-  margin: 10px 0 10px 0;
+  margin: 25px 0 20px 0;
 }
 
 .button__pagination {
   display: flex;
   align-items: center;
+  background-color: white;
+  border: 1px solid white;
+  padding: 5px 30px;
+  border-radius: 20px;
+  box-shadow: 0px 1px 5px black;
 }
 
 .button__values {
-  margin: 20px 30px;
+  margin: 20px 0px;
 }
 
 .button__values .link {
@@ -79,20 +98,28 @@ body {
   align-items: center;
   font-size: 22px;
   font-weight: 500;
-  color: aquamarine;
+  color: #716969;
   background: transparent;
   outline: none;
-  border: none;
+  border-radius: 10px;
   cursor: pointer;
+}
+
+.button__prev:active, .button__next:active {
+  background-color: #716969;
+  color: antiquewhite;
 }
 
 .button__values .active-page {
   color: white;
-  background-image: linear-gradient(#ff4568, #ff4568) !important;
+  background-image: linear-gradient(#7d74ff, #7d74ff) !important;
   background-repeat: no-repeat;
   background-position: 0 0;
 }
 
+.button__next {
+  margin-left: 20px;
+}
 
 .hide {
   display: none;

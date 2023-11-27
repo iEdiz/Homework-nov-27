@@ -1,10 +1,10 @@
 import axios from 'axios';
-import { event } from 'jquery';
 import { v4 as uuidv4 } from 'uuid';
 
 const countryWrapper: HTMLDivElement = document.querySelector('.js-country-wrapper');
 const countryHeader: HTMLDivElement = document.querySelector('.js-country-header');
 
+// Declaring Country type that's in DB
 type Country = {
   id?: string;
   name: string;
@@ -24,21 +24,26 @@ type Country = {
   isoCode: string;
 };
 
+// Countries Array that's we will be used for search and sort
 let countriesArr: Country[] = [];
 
+// Get page number
 const onPageChange = (page: number) => {
   getData(page);
 };
 
+// Function that takes HTPP link header, parses into JS object, used for pagination
 const parseLinkHeader = (linkHeader: string | undefined) => {
   const result: Record<string, string> = {};
 
+  // Check if linkheader is truthy
   if (linkHeader) {
     const links = linkHeader.split(', ');
 
+    // Iterate through each link, then split the URL
     links.forEach((link) => {
       const [url, rel] = link.split('; ');
-      const [, value] = /<(.+)>/.exec(url) || [];
+      const [, value] = /<(.+)>/.exec(url) || []; // With regex extrracts the <...> part of URL, stores into result
       result[rel] = value;
     });
   }
@@ -46,9 +51,12 @@ const parseLinkHeader = (linkHeader: string | undefined) => {
   return result;
 };
 
-let nextButtonClickHandler: EventListener | null = null;
-let prevButtonClickHandler: EventListener | null = null;
+// eslint-disable-next-line no-undef
+let nextButtonClickHandler: EventListener | null = null; // Button for next page
+// eslint-disable-next-line no-undef
+let prevButtonClickHandler: EventListener | null = null; // Button for previous page
 
+// Main function to get data from data base to browser, with default page 1 and data limit 20
 const getData = async (page = 1, limit = 20): Promise<void> => {
   try {
     const response = await axios.get<Country[]>('http://localhost:3004/countries', {
@@ -64,13 +72,15 @@ const getData = async (page = 1, limit = 20): Promise<void> => {
 
     const nextButton = document.querySelector<HTMLButtonElement>('.js-next-button');
     const prevButton = document.querySelector<HTMLButtonElement>('.js-prev-button');
-    const links = document.querySelectorAll('.link');
+    const links = document.querySelectorAll<HTMLTableCellElement>('.link');
 
+    // If it's first or last page disable prev or next buttons
     if (nextButton && prevButton) {
       prevButton.disabled = page === 1;
       nextButton.disabled = page === 12;
     }
 
+    // Add color to page number based on which page it is
     const highlightedPage = (pageNumber: number) => {
       links.forEach((link, index) => {
         link.classList.toggle('active-page', index + 1 === pageNumber);
@@ -78,7 +88,7 @@ const getData = async (page = 1, limit = 20): Promise<void> => {
     };
 
     if (nextButton) {
-      // Remove the previous event listener if it exists
+      // Remove the previous event listener if it exists so the listeners don't stack
       if (nextButtonClickHandler) {
         nextButton.removeEventListener('click', nextButtonClickHandler);
       }
@@ -86,6 +96,8 @@ const getData = async (page = 1, limit = 20): Promise<void> => {
       // Define the click event listener
       nextButtonClickHandler = () => {
         const nextPage = paginationInfo.next
+
+        // Check if there is a next page in paginatedInfo
           ? Number(new URL(paginationInfo.next).searchParams.get('_page'))
           : page + 1;
 
@@ -114,25 +126,26 @@ const getData = async (page = 1, limit = 20): Promise<void> => {
       prevButton.addEventListener('click', prevButtonClickHandler);
     }
 
+    // Mapping throguh countries array and giving unique ID to each country
     countriesArr = response.data.map((country) => ({ id: uuidv4(), ...country }));
 
+    // Assign country table to country wrapper
     if (countryWrapper) {
       countryWrapper.innerHTML = buildTableHTML(countriesArr);
     }
-
-    // Use paginationInfo to handle pagination links
-    // For example, you can use paginationInfo.next, paginationInfo.prev, etc.
   } catch (error) {
     console.error('Error fetching countries:', error);
   }
 
+  // Filter through country names for search input
   const searchByCountryName = (value: string) => {
     const filteredCountries = countriesArr.filter(
       (country) => country.name.toLowerCase().includes(value.toLowerCase()),
     );
-    showCountries(filteredCountries);
+    showCountries(filteredCountries); // Asign filetered countries to show countries function
   };
 
+  // Filter by capital city
   const searchByCapitalCity = (value: string) => {
     const filteredCountries = countriesArr.filter(
       (country) => country.capital.toLowerCase().includes(value.toLowerCase()),
@@ -140,6 +153,7 @@ const getData = async (page = 1, limit = 20): Promise<void> => {
     showCountries(filteredCountries);
   };
 
+  // Filter by currency
   const searchByCurrency = (value: string) => {
     const filteredCountries = countriesArr.filter(
       (country) => country.currency.name.toLowerCase().includes(value.toLowerCase()),
@@ -147,6 +161,7 @@ const getData = async (page = 1, limit = 20): Promise<void> => {
     showCountries(filteredCountries);
   };
 
+  // Filter by language
   const searchByLanguage = (value: string) => {
     const filteredCountries = countriesArr.filter(
       (country) => country.language.name.toLowerCase().includes(value.toLowerCase()),
@@ -159,7 +174,9 @@ const getData = async (page = 1, limit = 20): Promise<void> => {
   const searchCurrency = document.querySelector<HTMLInputElement>('input[name="countryCurrency"]');
   const searchLanguage = document.querySelector<HTMLInputElement>('input[name="countryLanguage"]');
 
+  // Add filter functions to each input element
   searchCountryName.addEventListener('input', () => {
+    // Add input eventListener so search updates real time
     searchByCountryName(searchCountryName.value.trim());
   });
 
@@ -176,11 +193,12 @@ const getData = async (page = 1, limit = 20): Promise<void> => {
   });
 };
 
+// Create HTML for main header search inputs and page numbers
 const mainHeader = () => {
   countryHeader.innerHTML = `
     <h2 class="main-header">My Country List</h2>
     <form class="d-flex input-group w-auto js-input" style="gap: 20px; margin: 0 0 10px 0">
-        <input class="form-control" type="text" name="countryName" placeholder="Search country name..." value="">
+        <input class="form-control" type="text" name="countryName" placeholder="Search country name...">
         <span class="icon-arrow js-icon-arrow" data-sort="name">&UpArrow;</span>
         <input class="form-control" type="text" name="countryCapital" placeholder="Search capital city...">
         <span class="icon-arrow js-icon-arrow" data-sort="capital">&UpArrow;</span>
@@ -210,6 +228,7 @@ const mainHeader = () => {
     `;
 };
 
+// Function to show filtered countries on search
 const showCountries = (filteredCountries: Country[]) => {
   const countryTable = document.querySelector('.country-table');
 
@@ -218,11 +237,12 @@ const showCountries = (filteredCountries: Country[]) => {
   }
 };
 
+// Main table of countries function made with Bootstrap
 const buildTableHTML = (countries: Country[]): string => {
   const html = `
     <table class="table table-striped table-dark table-bordered table-hover country-table">
       <thead class="thead-dark">
-        <tr>
+        <tr table__heading>
           <th scope="col" class="js-table-heading">Country name</th>
           <th scope="col" class="js-table-heading">Country code</th>
           <th scope="col" class="js-table-heading">Capital city</th>
@@ -231,7 +251,7 @@ const buildTableHTML = (countries: Country[]): string => {
         </tr>
       </thead>
       <tbody>
-        ${countries
+        ${countries // Maps countries array to add them to a row in table
     .map(
       (country) => `
               <tr class="js-country-row" id="country-${country.id}">
@@ -247,9 +267,10 @@ const buildTableHTML = (countries: Country[]): string => {
       </tbody>
     </table>`;
 
-  return html;
+  return html; // Return final HTML after mapping
 };
 
+// Function that checks Country keys, compares and sorts them
 const sortData = (key: keyof Country) => {
   countriesArr.sort((a, b) => {
     const valueA = a[key].toString().toLowerCase();
@@ -257,28 +278,38 @@ const sortData = (key: keyof Country) => {
     return valueA.localeCompare(valueB);
   });
 
-  showCountries(countriesArr);
+  showCountries(countriesArr); // Asign to filtered countries function
 };
 
+// Function that sets eventListener only when DOM is fully loaded
 document.addEventListener('DOMContentLoaded', () => {
+  // Show all countries
   getData();
+
+  // Show header/inputs/page count
   mainHeader();
 
+  // Adding arrows for sorting
   const arrows = document.querySelectorAll('.js-icon-arrow');
 
+  //
   arrows.forEach((arrow) => {
     arrow.addEventListener('click', () => {
       arrows.forEach((otherArrow) => {
+        // Remove down and active class for every arrow except clicked one
         if (otherArrow !== arrow) {
           otherArrow.classList.remove('down', 'active');
         }
       });
 
+      // Toggle the active and down classes for clicked arrow
       arrow.classList.toggle('active');
       arrow.classList.toggle('down', arrow.classList.contains('active'));
 
+      // Get the value of data sort based as key of Country, to sort by Country name or capital
       const sortBy = arrow.getAttribute('data-sort') as keyof Country | null;
 
+      // If the attribute exists then exacture the sortData function
       if (sortBy) {
         sortData(sortBy);
       }
