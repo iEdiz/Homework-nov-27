@@ -23,7 +23,7 @@ body {
   box-shadow: 0px 1px 5px black;
 }
 
-.js-input .icon-arrow {
+.search-form .icon-arrow {
   display: inline-block;
   width: 2.5rem;
   height: 2.5rem;
@@ -36,7 +36,7 @@ body {
   transition: 0.2s ease-in-out;
 }
 
-.js-input .icon-arrow.active {
+.search-form .icon-arrow.active {
   border: solid #7d74ff 1.4px !important;
 }
 

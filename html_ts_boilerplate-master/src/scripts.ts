@@ -223,7 +223,7 @@ const getData = (page = 1, limit = countryLimit): Promise<void> => axios.get<Cou
 const mainHeader = () => {
   countryHeader.innerHTML = `
     <h2 class="main-header">My Country List</h2>
-    <form class="d-flex input-group w-auto js-input" style="gap: 20px; margin: 0 0 10px 0">
+    <form class="d-flex input-group w-auto js-input search-form" style="gap: 20px; margin: 0 0 10px 0">
         <input class="form-control" type="text" name="countryName" placeholder="Search country name...">
         <span class="icon-arrow js-icon-arrow" data-sort="name">&UpArrow;</span>
         <input class="form-control" type="text" name="countryCapital" placeholder="Search capital city...">
